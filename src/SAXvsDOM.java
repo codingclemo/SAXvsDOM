@@ -34,6 +34,8 @@ public class SAXvsDOM {
 class PrintElementsHandler extends DefaultHandler {
 	
 	StringBuffer blanks = new StringBuffer();
+	StringBuffer elem = new StringBuffer();
+	
 	int depth = 0;
 	int bookCount = 0;
 	int bookCountXML = 0;
@@ -76,6 +78,7 @@ class PrintElementsHandler extends DefaultHandler {
 	
 	public void processBuch(String qName, Attributes attributes) {
 		System.out.println();
+		elem.append("\n")
 		processDefault(qName, attributes);
 	}
 	
@@ -104,17 +107,34 @@ class PrintElementsHandler extends DefaultHandler {
 	public void processDefault(String qName, Attributes attributes) {
 		blanks.append("  "); // add 2 blanks
 		depth++;
-		System.out.print(blanks.toString() + "<" + qName);
+		
+		elem.append(blanks.toString() + "<" + qName);
 		for (int i = 0; i < attributes.getLength(); i++) {
-			System.out.print(" " + attributes.getQName(i) + "=\"");
+			elem.append(" " + attributes.getQName(i) + "=\"");
 			if (isDollar) {
-				System.out.print("Euro");
+				elem.append("Euro");
 			} else {
-				System.out.print(attributes.getValue(i));
+				elem.append(attributes.getValue(i));
 			}
-			System.out.print("\"");
+			elem.append("\"");
 		}	
-		System.out.print(">");
+		elem.append(">");
+		
+		
+		
+		
+		
+//		System.out.print(blanks.toString() + "<" + qName);
+//		for (int i = 0; i < attributes.getLength(); i++) {
+//			System.out.print(" " + attributes.getQName(i) + "=\"");
+//			if (isDollar) {
+//				System.out.print("Euro");
+//			} else {
+//				System.out.print(attributes.getValue(i));
+//			}
+//			System.out.print("\"");
+//		}	
+//		System.out.print(">");
 	}	
 	
 	public void characters(char[] ch, int start, int length) throws SAXException {
@@ -137,15 +157,22 @@ class PrintElementsHandler extends DefaultHandler {
 			bookCount++;
 		}
 		
-		if (isPage ) { //&& Integer.parseInt(s) > 500) {
-			countPages++;
+		if (isPage) {
+//			s = s.replace(" ", "");
+			Integer val = Integer.parseInt(s);
+			if (val.intValue() > 500) {
+				countPages++;
+			}
 			isPage = false;
 		}
+		
+
 		
 		if(s.startsWith("Professional XML") && s.endsWith("Professional XML"))
 			bookCountXML++;
 			
-		System.out.print(s);
+		elem.append(s);
+//		System.out.print(s);
 			
 	}
 	
@@ -156,7 +183,16 @@ class PrintElementsHandler extends DefaultHandler {
 			addStatistics();
 		blanks.delete(0, 2); // delete 2 blanks
 		depth--;
-		System.out.println(blanks.toString() + "</" + qName + ">");
+//		System.out.println(blanks.toString() + "</" + qName + ">");
+		
+		if (elem.toString().endsWith(">")) {
+			elem.setLength(0);
+		} else {
+			elem.append(blanks.toString() + "</" + qName + ">\n");
+			System.out.print(elem.toString());
+			elem.setLength(0);
+		}
+			
 
 
 	}
