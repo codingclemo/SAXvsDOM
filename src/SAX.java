@@ -3,7 +3,7 @@ import javax.xml.parsers.*;
 import org.xml.sax.*;
 import org.xml.sax.helpers.DefaultHandler;
 
-public class SAXvsDOM {
+public class SAX {
 
 
 	public static void main(String[] args) {
@@ -13,12 +13,18 @@ public class SAXvsDOM {
 		SAXParserFactory factory = SAXParserFactory.newInstance();
 		factory.setValidating(true);
 
+		// set timer
+		long parsingTime = System.currentTimeMillis();
+		
 		SAXParser saxParser;
 		try {
 			
 			saxParser = factory.newSAXParser();
 			File file = new File("../size2mb.xml");
 			saxParser.parse(file, new PrintElementsHandler());
+			
+			parsingTime = System.currentTimeMillis() - parsingTime;
+			System.out.println("Parsing is done and took " + parsingTime + " miliseconds. Output file is above.");
 
 		} catch (ParserConfigurationException e1) {
 			System.out.println("ParserConfigurationException: "+e1.getMessage());
@@ -40,6 +46,7 @@ class PrintElementsHandler extends DefaultHandler {
 	int bookCount = 0;
 	int bookCountXML = 0;
 	int countPages = 0;
+	int countEmpty = 0;
 	
 	boolean isDollar = false;
 	boolean isPrice = false;
@@ -77,13 +84,14 @@ class PrintElementsHandler extends DefaultHandler {
 	}
 	
 	public void processBuch(String qName, Attributes attributes) {
-		System.out.println();
-		elem.append("\n")
+//		System.out.println();
+		elem.append("\n");
 		processDefault(qName, attributes);
 	}
 	
 	public void processTitel(String qName, Attributes attributes) {
-		System.out.println();
+//		System.out.println();
+		elem.append("\n");
 		processDefault(qName, attributes);
 	}
 	
@@ -119,22 +127,6 @@ class PrintElementsHandler extends DefaultHandler {
 			elem.append("\"");
 		}	
 		elem.append(">");
-		
-		
-		
-		
-		
-//		System.out.print(blanks.toString() + "<" + qName);
-//		for (int i = 0; i < attributes.getLength(); i++) {
-//			System.out.print(" " + attributes.getQName(i) + "=\"");
-//			if (isDollar) {
-//				System.out.print("Euro");
-//			} else {
-//				System.out.print(attributes.getValue(i));
-//			}
-//			System.out.print("\"");
-//		}	
-//		System.out.print(">");
 	}	
 	
 	public void characters(char[] ch, int start, int length) throws SAXException {
@@ -181,20 +173,23 @@ class PrintElementsHandler extends DefaultHandler {
 		
 		if(qName == "Rechnungen")
 			addStatistics();
+		
+		// don't print elements when empty (ie. <Verlag>
+		if (elem.toString().endsWith(">")) {
+			countEmpty++;
+			elem.append("\n");
+		} else {
+			if (elem.toString().contains("<Buch>"))
+				elem.append(blanks.toString());
+			elem.append(blanks.toString() +  "</" + qName + ">\n");
+			System.out.print(elem.toString());
+		}
+		
+		// reset StringBuffer
+		elem.setLength(0);
+			
 		blanks.delete(0, 2); // delete 2 blanks
 		depth--;
-//		System.out.println(blanks.toString() + "</" + qName + ">");
-		
-		if (elem.toString().endsWith(">")) {
-			elem.setLength(0);
-		} else {
-			elem.append(blanks.toString() + "</" + qName + ">\n");
-			System.out.print(elem.toString());
-			elem.setLength(0);
-		}
-			
-
-
 	}
 	
 	public void endDocument() throws SAXException {
@@ -203,7 +198,7 @@ class PrintElementsHandler extends DefaultHandler {
 	
 	public void addStatistics() {
 		System.out.println(blanks.toString() + "<Statistik>");
-		System.out.println(blanks.toString() + "  <leereElemente>" + 0 + "</leereElemente>");
+		System.out.println(blanks.toString() + "  <leereElemente>" + countEmpty + "</leereElemente>");
 		System.out.println(blanks.toString() + "  <Verkaufszahlen buch=\"XML Professional\">" + bookCountXML + "</Verkaufszahlen>");
 		System.out.println(blanks.toString() + "  <Durchschnittspreis gruppierung=\"Rechnung\">" + (double) avgPrice / bookCount + "</Durchschnittspreis>");
 		System.out.println(blanks.toString() + "  <Seiten mehrAls=\"500\">" + countPages + "</Seiten>");
